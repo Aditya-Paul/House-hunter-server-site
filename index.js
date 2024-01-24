@@ -1,7 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 const jwt = require('jsonwebtoken');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 const app = express()
 const port = process.env.PORT || 3000
@@ -73,8 +73,8 @@ async function run() {
                     return res.status(401).send({ message: 'Invalid Email and Password' })
                 }
                 const token = jwt.sign(existingUser, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
-                console.log('token', token)
-                res.send({ email : existingUser.email, token })
+                console.log(existingUser.name)
+                res.send({ email: existingUser.email, name: existingUser.name, number: existingUser.number, token })
             }
             catch (err) {
                 console.log(err)
@@ -82,32 +82,87 @@ async function run() {
 
         })
 
-        app.get('/users', async (req,res)=>{
-            let query ={}
+        app.get('/users', async (req, res) => {
+            let query = {}
             // const email = req.query.email
             // console.log(email)
             // if(email){
             //     query.email = email
             // }
-            const result =  await usercollection.find(query).toArray()
+            const result = await usercollection.find(query).toArray()
             res.send(result)
         })
 
         app.get('/user/:email', async (req, res) => {
             const email = req.params.email
             const query = { email: email };
-            console.log(query)
+            //console.log(query)
             const result = await usercollection.findOne(query)
-            console.log(result)
+            //console.log(result)
             res.send(result)
         })
 
         // add house
-        app.post('/houses', async (req,res)=>{
+        app.post('/houses', async (req, res) => {
             const house = req.body
             //console.log(house)
             const result = await housecollection.insertOne(house)
             res.send(result)
+        })
+        app.get('/houses', async (req, res) => {
+            const result = await housecollection.find().toArray()
+            res.send(result)
+        })
+        app.get('/House/:email', async (req, res) => {
+            const email = req.params.email
+            console.log(email)
+            const query = { email: email }
+            const result = await housecollection.find(query).toArray()
+            console.log(result)
+            res.send(result)
+        })
+        app.get('/Houses/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await housecollection.findOne(query)
+            //console.log(result)
+            res.send(result)
+        })
+        app.put('/singlehouse/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const body = req.body
+            console.log(body)
+            const uphouse = {
+                $set: {
+                    email:body.email,
+                    name:body.name,
+                    address:body.address,
+                    city:body.city,
+                    bedrooms:body.bedrooms,
+                    bathrooms:body.bathrooms,
+                    roomsize:body.roomsize,
+                    picture:body.picture,
+                    availabilitydate:body.availabilitydate,
+                    rent_per_month:body.rent_per_month,
+                    phone_number:body.phone_number,
+                    description:body.description,
+                    status:body.status,
+                }
+            }
+            const result = await housecollection.updateOne(query,uphouse)
+            //console.log(result)
+            res.send(result)
+
+        })
+
+        app.delete('/individualhouse/:id',async(req,res)=>{
+            const id = req.params.id;
+            const query = {_id: new ObjectId(id)}
+            
+             const result = await housecollection.deleteOne(query)
+             console.log(result)
+             res.send(result)
         })
 
         // Send a ping to confirm a successful connection
